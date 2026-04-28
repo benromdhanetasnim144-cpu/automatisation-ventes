@@ -1,0 +1,8 @@
+# Fichiers générés automatiquement par le code
+ventes.csv
+resultats_final.csv
+graphiques_ventes.png
+
+# Python
+__pycache__/
+*.pyc
