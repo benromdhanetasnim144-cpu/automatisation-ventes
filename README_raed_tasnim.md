@@ -81,10 +81,9 @@ automatisation-ventes/
   <strong style="font-size:30px;">👥 Équipe</strong>
   <ul>
     <li><strong>Raed Hammouda</strong></li>
-    <li><strong>Tasnim Ben Chaabane</strong></li>
+    <li><strong>Tasnim Ben Romdhane</strong></li>
   </ul>
 </div>
-
 ---
 
 <div style="background-color:#eeeeee; padding:15px; color:black;">
