@@ -56,7 +56,7 @@
   <ol>
     <li>Cloner le dépôt : <code>git clone &lt;lien-github&gt;</code></li>
     <li>Installer matplotlib : <code>pip install -r requirements_raed_tasnim.txt</code></li>
-    <li>Lancer le script : <code>py analyse_ventes.py</code></li>
+    <li>Lancer le script : <code>py analyse_ventes_raed_tasnim.py</code></li>
   </ol>
 </div>
 
