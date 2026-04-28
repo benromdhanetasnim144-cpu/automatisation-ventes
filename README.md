@@ -55,7 +55,7 @@
   <strong style="font-size:30px;">🚀 Comment lancer le projet</strong>
   <ol>
     <li>Cloner le dépôt : <code>git clone &lt;lien-github&gt;</code></li>
-    <li>Installer matplotlib : <code>pip install -r requirements.txt</code></li>
+    <li>Installer matplotlib : <code>pip install -r requirements_raed_tasnim.txt</code></li>
     <li>Lancer le script : <code>py analyse_ventes.py</code></li>
   </ol>
 </div>
@@ -67,8 +67,8 @@
 ```
 automatisation-ventes/
 │
-├── analyse_ventes.py     ← Script principal (à lancer)
-├── requirements.txt      ← Dépendances Python
+├── analyse_ventes_raed_tasnim.py     ← Script principal (à lancer)
+├── requirements_raed_tasnim.txt      ← Dépendances Python
 ├── README.md             ← Ce fichier
 └── .gitignore            ← Fichiers exclus de Git
 ```
@@ -87,7 +87,7 @@ automatisation-ventes/
 
 ---
 
-<div style="background-color:#eeeeee; padding:15px; color:bleu;">
+<div style="background-color:#eeeeee; padding:15px; color:blue;">
   <strong style="font-size:25px;">📄 Licence LMI2</strong>
   <p>Projet académique réalisé dans le cadre du cours <strong>Logiciels</strong> — 2025.</p>
 </div>
