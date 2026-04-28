@@ -84,9 +84,10 @@ automatisation-ventes/
     <li><strong>Tasnim Ben Romdhane</strong></li>
   </ul>
 </div>
+
 ---
 
-<div style="background-color:#eeeeee; padding:15px; color:black;">
+<div style="background-color:#eeeeee; padding:15px; color:bleu;">
   <strong style="font-size:25px;">📄 Licence LMI2</strong>
   <p>Projet académique réalisé dans le cadre du cours <strong>Logiciels</strong> — 2025.</p>
 </div>
