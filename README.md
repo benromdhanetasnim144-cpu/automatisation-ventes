@@ -73,7 +73,7 @@ automatisation-ventes/
 └── .gitignore            ← Fichiers exclus de Git
 ```
 
-> ⚠️ `ventes.csv`, `resultats_final.csv` et `graphiques_ventes.png` sont **générés automatiquement** par le code.
+> ⚠️ `ventes.csv`, `resultats_final.xlsx`, `resultats_final.csv` et `graphiques_ventes.png` sont **générés automatiquement** par le code.
 
 ---
 
