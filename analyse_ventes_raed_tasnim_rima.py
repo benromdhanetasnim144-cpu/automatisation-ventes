@@ -207,61 +207,6 @@ def exporter_resultats(resultats: list[dict],
 
 
 # ══════════════════════════════════════════════
-#  BONUS — Exporter Excel formaté
-# ══════════════════════════════════════════════
-def exporter_excel(resultats: list[dict],
-                   chemin: str = "resultats_final.xlsx") -> None:
-    """
-    [BONUS] Crée un fichier Excel formaté avec :
-      - En-têtes en bleu foncé avec texte blanc
-      - Lignes alternées (bleu clair / blanc)
-      - Bordures fines sur toutes les cellules
-      - Largeur des colonnes ajustée automatiquement
-    """
-    # ── Créer le classeur ───────────────────────────────────
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Résultats Ventes"
-
-    # ── Définir les styles ──────────────────────────────────
-    header_fill = PatternFill("solid", fgColor="1F4E79")   # Bleu foncé
-    alt_fill    = PatternFill("solid", fgColor="D6E4F0")   # Bleu clair
-    border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"),  bottom=Side(style="thin")
-    )
-
-    # ── Écrire les en-têtes (ligne 1) ───────────────────────
-    colonnes = ["ID", "Prix", "Quantite", "Remise",
-                "CA_Brut", "CA_Net", "TVA", "CA_TTC"]
-    for col, titre in enumerate(colonnes, 1):
-        cell = ws.cell(row=1, column=col, value=titre)
-        cell.font      = Font(bold=True, color="FFFFFF", size=12)
-        cell.fill      = header_fill
-        cell.alignment = Alignment(horizontal="center")
-        cell.border    = border
-
-    # ── Écrire les données (à partir de la ligne 2) ─────────
-    for row_idx, r in enumerate(resultats, 2):
-        # Lignes paires = bleu clair, lignes impaires = blanc
-        fill = alt_fill if row_idx % 2 == 0 else PatternFill("solid", fgColor="FFFFFF")
-        for col_idx, key in enumerate(colonnes, 1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=r[key])
-            cell.alignment = Alignment(horizontal="center")
-            cell.border    = border
-            cell.fill      = fill
-
-    # ── Ajuster la largeur des colonnes automatiquement ─────
-    for col in ws.columns:
-        max_len = max(len(str(c.value or "")) for c in col) + 4
-        ws.column_dimensions[get_column_letter(col[0].column)].width = max_len
-
-    # ── Sauvegarder et ouvrir le fichier ────────────────────
-    wb.save(chemin)
-    print(f"✅ Excel formaté sauvegardé dans '{chemin}'.\n")
-    os.startfile(chemin)
-
-# ══════════════════════════════════════════════
 #  BONUS — Graphiques Matplotlib
 # ══════════════════════════════════════════════
 def afficher_graphiques(resultats: list[dict]) -> None:
@@ -334,7 +279,64 @@ def afficher_graphiques(resultats: list[dict]) -> None:
     nom_fichier = "graphiques_ventes.png"
     plt.savefig(nom_fichier, dpi=150, bbox_inches="tight")
     print(f"✅ Graphiques sauvegardés dans '{nom_fichier}'.\n")
-    plt.show()
+    plt.show(block=False)   
+    plt.pause(50)             
+
+
+# ══════════════════════════════════════════════
+#  BONUS — Exporter Excel formaté
+# ══════════════════════════════════════════════
+def exporter_excel(resultats: list[dict],
+                   chemin: str = "resultats_final.xlsx") -> None:
+    """
+    [BONUS] Crée un fichier Excel formaté avec :
+      - En-têtes en bleu foncé avec texte blanc
+      - Lignes alternées (bleu clair / blanc)
+      - Bordures fines sur toutes les cellules
+      - Largeur des colonnes ajustée automatiquement
+    """
+    # ── Créer le classeur ───────────────────────────────────
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Résultats Ventes"
+
+    # ── Définir les styles ──────────────────────────────────
+    header_fill = PatternFill("solid", fgColor="1F4E79")   # Bleu foncé
+    alt_fill    = PatternFill("solid", fgColor="D6E4F0")   # Bleu clair
+    border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"),  bottom=Side(style="thin")
+    )
+
+    # ── Écrire les en-têtes (ligne 1) ───────────────────────
+    colonnes = ["ID", "Prix", "Quantite", "Remise",
+                "CA_Brut", "CA_Net", "TVA", "CA_TTC"]
+    for col, titre in enumerate(colonnes, 1):
+        cell = ws.cell(row=1, column=col, value=titre)
+        cell.font      = Font(bold=True, color="FFFFFF", size=12)
+        cell.fill      = header_fill
+        cell.alignment = Alignment(horizontal="center")
+        cell.border    = border
+
+    # ── Écrire les données (à partir de la ligne 2) ─────────
+    for row_idx, r in enumerate(resultats, 2):
+        # Lignes paires = bleu clair, lignes impaires = blanc
+        fill = alt_fill if row_idx % 2 == 0 else PatternFill("solid", fgColor="FFFFFF")
+        for col_idx, key in enumerate(colonnes, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=r[key])
+            cell.alignment = Alignment(horizontal="center")
+            cell.border    = border
+            cell.fill      = fill
+
+    # ── Ajuster la largeur des colonnes automatiquement ─────
+    for col in ws.columns:
+        max_len = max(len(str(c.value or "")) for c in col) + 4
+        ws.column_dimensions[get_column_letter(col[0].column)].width = max_len
+
+    # ── Sauvegarder et ouvrir le fichier ────────────────────
+    wb.save(chemin)
+    print(f"✅ Excel formaté sauvegardé dans '{chemin}'.\n")
+    os.startfile(chemin)
 
 
 # ══════════════════════════════════════════════
