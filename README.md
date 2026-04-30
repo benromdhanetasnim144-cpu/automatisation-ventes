@@ -55,8 +55,8 @@
   <strong style="font-size:30px;">🚀 Comment lancer le projet</strong>
   <ol>
     <li>Cloner le dépôt : <code>git clone &lt;lien-github&gt;</code></li>
-    <li>Installer matplotlib : <code>pip install -r requirements_raed_tasnim.txt</code></li>
-    <li>Lancer le script : <code>py analyse_ventes_raed_tasnim.py</code></li>
+    <li>Installer matplotlib : <code>pip install -r requirements_raed_tasnim_rima.txt</code></li>
+    <li>Lancer le script : <code>py analyse_ventes_raed_tasnim_rima.py</code></li>
   </ol>
 </div>
 
@@ -67,8 +67,8 @@
 ```
 automatisation-ventes/
 │
-├── analyse_ventes_raed_tasnim.py     ← Script principal (à lancer)
-├── requirements_raed_tasnim.txt      ← Dépendances Python
+├── analyse_ventes_raed_tasnim_rima.py     ← Script principal (à lancer)
+├── requirements_raed_tasnim_rima.txt      ← Dépendances Python
 ├── README.md             ← Ce fichier
 └── .gitignore            ← Fichiers exclus de Git
 ```
@@ -82,6 +82,7 @@ automatisation-ventes/
   <ul>
     <li><strong>Raed Hammouda</strong></li>
     <li><strong>Tasnim Ben Romdhane</strong></li>
+     <li><strong>Rima Ben Arfi</strong></li>
   </ul>
 </div>
 
@@ -89,7 +90,7 @@ automatisation-ventes/
 
 <div style="background-color:#eeeeee; padding:15px; color:blue;">
   <strong style="font-size:25px;">📄 Licence LMI2</strong>
-  <p>Projet académique réalisé dans le cadre du cours <strong>Logiciels</strong> — 2025.</p>
+  <p>Projet académique réalisé dans le cadre du cours <strong>Logiciels</strong> — 2025\2026.</p>
 </div>
 
 ---
