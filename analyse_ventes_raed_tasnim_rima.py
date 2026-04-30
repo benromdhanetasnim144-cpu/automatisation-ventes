@@ -273,7 +273,7 @@ def afficher_graphiques(resultats: list[dict]) -> None:
     Sauvegarde les graphiques dans 'graphiques_ventes.png'.
     """
     if not MATPLOTLIB_AVAILABLE:
-        print("⚠️  Graphiques ignorés (matplotlib absent).\n")
+        print("  Graphiques ignorés (matplotlib absent).\n")
         return
 
     ids    = [str(r["ID"])    for r in resultats]
@@ -285,7 +285,7 @@ def afficher_graphiques(resultats: list[dict]) -> None:
                 "#1abc9c", "#e67e22", "#34495e", "#e91e63", "#00bcd4"]
 
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    fig.suptitle("📊 Tableau de Bord des Ventes — E-Commerce",
+    fig.suptitle(" Tableau de Bord des Ventes — E-Commerce",
                  fontsize=16, fontweight="bold", color="#2c3e50")
     fig.patch.set_facecolor("#f8f9fa")
 
