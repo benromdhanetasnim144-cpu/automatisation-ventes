@@ -17,6 +17,10 @@ import matplotlib.patches as mpatches
 import matplotlib.animation as animation
 from matplotlib.gridspec import GridSpec
 from matplotlib.colors import LinearSegmentedColormap
+import openpyxl                                    
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side    
+from openpyxl.utils import get_column_letter       
+import os 
 
 # ─────────────────────────────────────────────
 #  ⚙️  CONSTANTES GLOBALES
@@ -275,6 +279,62 @@ def _graphique_top10(ax, df, valeur_max):
     return ani
 
 
+# ══════════════════════════════════════════════
+#  BONUS — Exporter Excel formaté
+# ══════════════════════════════════════════════
+def exporter_excel(resultats: list[dict],
+                   chemin: str = "resultats_final.xlsx") -> None:
+    """
+    [BONUS] Crée un fichier Excel formaté avec :
+      - En-têtes en bleu foncé avec texte blanc
+      - Lignes alternées (bleu clair / blanc)
+      - Bordures fines sur toutes les cellules
+      - Largeur des colonnes ajustée automatiquement
+    """
+    # ── Créer le classeur ───────────────────────────────────
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Résultats Ventes"
+
+    # ── Définir les styles ──────────────────────────────────
+    header_fill = PatternFill("solid", fgColor="1F4E79")   # Bleu foncé
+    alt_fill    = PatternFill("solid", fgColor="D6E4F0")   # Bleu clair
+    border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"),  bottom=Side(style="thin")
+    )
+
+    # ── Écrire les en-têtes (ligne 1) ───────────────────────
+    colonnes = ["ID", "Prix", "Quantite", "Remise",
+                "CA_Brut", "CA_Net", "TVA", "CA_TTC"]
+    for col, titre in enumerate(colonnes, 1):
+        cell = ws.cell(row=1, column=col, value=titre)
+        cell.font      = Font(bold=True, color="FFFFFF", size=12)
+        cell.fill      = header_fill
+        cell.alignment = Alignment(horizontal="center")
+        cell.border    = border
+
+    # ── Écrire les données (à partir de la ligne 2) ─────────
+    for row_idx, r in enumerate(resultats, 2):
+        # Lignes paires = bleu clair, lignes impaires = blanc
+        fill = alt_fill if row_idx % 2 == 0 else PatternFill("solid", fgColor="FFFFFF")
+        for col_idx, key in enumerate(colonnes, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=r[key])
+            cell.alignment = Alignment(horizontal="center")
+            cell.border    = border
+            cell.fill      = fill
+
+    # ── Ajuster la largeur des colonnes automatiquement ─────
+    for col in ws.columns:
+        max_len = max(len(str(c.value or "")) for c in col) + 4
+        ws.column_dimensions[get_column_letter(col[0].column)].width = max_len
+
+    # ── Sauvegarder et ouvrir le fichier ────────────────────
+    wb.save(chemin)
+    print(f"✅ Excel formaté sauvegardé dans '{chemin}'.\n")
+    os.startfile(chemin)
+
+
 # ─────────────────────────────────────────────
 #  🚀  FONCTION PRINCIPALE
 # ─────────────────────────────────────────────
@@ -345,6 +405,11 @@ def lancer_analyse_performante():
         # ── Export résultats ──
         if n <= 2_000_000:
             df.to_csv(FICHIER_SORTIE, index=False)
+
+            if n <= 1000000:
+                resultats_dict = df.to_dict(orient="records")
+                exporter_excel(resultats_dict) 
+            
             print(f"💾 Résultats exportés dans '{FICHIER_SORTIE}'")
         else:
             print("⚠️  Volume > 2M : export CSV désactivé.")
@@ -387,14 +452,14 @@ def lancer_analyse_performante():
             ani4 = _graphique_top10(ax4, df, valeur_max)
 
             print(f"✅ Terminé en {time.time() - start:.4f} s")
+            print("💡 INFO : Fermez la fenêtre du graphique pour ouvrir le fichier Excel.")
             plt.show()
-
         else:
             print(f"✅ Terminé en {time.time() - start:.4f} s")
-
+        
+        
     except MemoryError:
         print("\n❌ Mémoire insuffisante pour ce volume de données.")
-
 
 if __name__ == "__main__":
     lancer_analyse_performante()
