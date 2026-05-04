@@ -73,7 +73,9 @@ pip install -r requirements_raed_tasnim_rima.txt
     <li>📊 Affiche le CA Total dans le terminal</li>
     <li>🏆 Trouve le produit le plus rentable</li>
     <li>📁 Exporte les résultats dans <code>resultats_final.csv</code></li>
-    <li>📈 Génère 3 graphiques avec Matplotlib</li>
+    <li>📈 Génère 4 graphiques avec Matplotlib</li>
+    <li>🟢 <strong>Expertise Excel</strong> — Exporte un fichier <code>.xlsx</code> <strong>stylisé</strong> (couleurs alternées, colonnes ajustées et en-têtes colorés).</li>
+    <li>🚀 <strong>Ouverture Automatique</strong> — Lance le fichier Excel immédiatement après l'analyse pour un gain de temps.</li>
   </ul>
 </div>
 
