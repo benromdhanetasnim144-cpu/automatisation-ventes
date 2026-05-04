@@ -1,381 +1,400 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║          🛒 AUTOMATISATION DES VENTES — E-COMMERCE          ║
-║              Projet de Fin d'Année — Logiciels               ║
+║          🛒 AUTOMATISATION DES VENTES — E-COMMERCE           ║
+║               Projet de Fin d'Année — Logiciels              ║
 ╚══════════════════════════════════════════════════════════════╝
 
-Ce script Python automatise l'analyse des données de ventes
-d'une entreprise e-commerce. Il lit un fichier CSV, effectue
-des calculs financiers, génère un rapport et des graphiques.
-
-Auteur : [ Raed Hammouda | Tasnim Ben Romdhane | Rima Ben Arfi ]
-Date   : 26/04/2026
+Auteur : Raed Hammouda, Tasnime Ben Romdhane, Rima Ben Arfi
 """
-
 # ─────────────────────────────────────────────
-#  📦 IMPORTATION DES BIBLIOTHÈQUES
+#  ⚙️  IMPORTING LIBRARIES
 # ─────────────────────────────────────────────
-import csv          # Pour lire et écrire des fichiers CSV
-import os           # Pour gérer les fichiers et dossiers
-import sys          # Pour quitter le programme proprement
-import openpyxl                                    # Pour créer des fichiers Excel
-from openpyxl import load_workbook                 # Pour charger un fichier Excel existant
-from openpyxl.styles import (Font, PatternFill,Alignment, Border, Side)    # Pour formater les cellules
-from openpyxl.utils import get_column_letter       # Pour convertir numéro colonne en lettre
-
-# Matplotlib est optionnel — pour les graphiques (Bonus)
-try:
-    import matplotlib.pyplot as plt
-    import matplotlib.patches as mpatches
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    print("⚠️  matplotlib non installé — graphiques désactivés.")
-    print("   Pour l'installer : pip install matplotlib\n")
-
+import pandas as pd
+import numpy as np
+import time
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import matplotlib.animation as animation
+from matplotlib.gridspec import GridSpec
+from matplotlib.colors import LinearSegmentedColormap
 
 # ─────────────────────────────────────────────
 #  ⚙️  CONSTANTES GLOBALES
 # ─────────────────────────────────────────────
-TAUX_TVA = 0.20          # TVA française = 20%
-FICHIER_ENTREE  = "ventes.csv"
-FICHIER_SORTIE  = "resultats_final.csv"
+TAUX_TVA = 0.20
+FICHIER_ENTREE = "ventes.csv"
+FICHIER_SORTIE = "resultats_final.csv"
+
+# ─────────────────────────────────────────────
+#  🎨  PALETTE "TERMINAL ACID"
+# ─────────────────────────────────────────────
+FOND = "#0D0D0D"        # Noir profond
+FOND_CARTE = "#141414"        # Noir doux
+GRILLE = "#1F1F1F"        # Séparateurs
+VERT_ACID = "#AAFF00"        # Vert néon (accent principal)
+CYAN_ELEC = "#00F5D4"        # Cyan électrique
+ORANGE_FEU = "#FF6B00"        # Orange vif
+ROSE_CHOC = "#FF2D78"        # Rose choc
+BLANC_DOUX = "#E8E8E8"        # Texte principal
+GRIS_MED = "#666666"        # Texte secondaire
+PALETTE_PIE = [VERT_ACID, CYAN_ELEC, ORANGE_FEU, ROSE_CHOC,
+               "#9B5DE5", "#F4D35E", "#EE4266"]
+FRAMES = 45               # Durée animations
 
 
-# ══════════════════════════════════════════════
-#  ÉTAPE 1 — Générer le fichier ventes.csv
-# ══════════════════════════════════════════════
-def generer_ventes_csv(chemin: str = FICHIER_ENTREE) -> None:
-    """
-    Crée le fichier ventes.csv avec des données d'exemple.
+# ─────────────────────────────────────────────
+#  🔧  UTILITAIRES
+# ─────────────────────────────────────────────
+def _style_ax(ax):
+    """Applique le fond et les couleurs d'axes sur tous les panneaux."""
+    ax.set_facecolor(FOND_CARTE)
+    for spine in ax.spines.values():
+        spine.set_edgecolor(GRILLE)
+    ax.tick_params(colors=GRIS_MED)
+    ax.xaxis.label.set_color(GRIS_MED)
+    ax.yaxis.label.set_color(GRIS_MED)
 
-    Chaque ligne représente une vente :
-      - ID       : identifiant unique du produit
-      - Prix     : prix unitaire en euros
-      - Quantite : nombre d'articles vendus
-      - Remise   : réduction appliquée en pourcentage (0–100)
-    """
-    donnees = [
-        # ID     Prix   Qté  Remise
-        [101,   15.0,   3,    10],   # Stylo premium
-        [102,   25.0,   2,     5],   # Carnet A5
-        [103,   10.0,   5,     0],   # Crayon set
-        [104,   80.0,   1,    15],   # Calculatrice
-        [105,   45.0,   4,    20],   # Agenda 2025
-        [106,   12.5,   8,     0],   # Post-it pack
-        [107,  120.0,   2,    10],   # Lampe de bureau
-        [108,   30.0,   3,     5],   # Classeur
-        [109,   55.0,   1,     0],   # Dictionnaire
-        [110,   18.0,   6,    12],   # Règle métallique
+
+def _titre(ax, texte):
+    """Titre de panneau avec barre colorée à gauche."""
+    ax.set_title(texte, color=BLANC_DOUX, fontsize=11,
+                 fontweight="bold", loc="left", pad=10,
+                 fontfamily="monospace")
+
+
+# ─────────────────────────────────────────────
+#  📊  GRAPHIQUE 1 — Histogramme animé CA Net
+# ─────────────────────────────────────────────
+def _graphique_histogramme(ax, df, valeur_max):
+    _style_ax(ax)
+    _titre(ax, "▌ Distribution  CA Net")
+
+    counts, edges = np.histogram(df["CA_Net"], bins=min(len(df), 50))
+    couleurs = [VERT_ACID if i == counts.argmax() else "#2A2A2A"
+                for i in range(len(counts))]
+
+    bars = ax.bar(
+        edges[:-1], np.zeros(len(counts)),
+        width=np.diff(edges),
+        color=couleurs,
+        edgecolor=FOND, linewidth=0.4, align="edge"
+    )
+
+    ax.set_ylim(0, counts.max() * 1.18)
+    ax.axvline(valeur_max, color=ORANGE_FEU, linewidth=1.5,
+               linestyle="--", label=f"Max : {valeur_max:,.0f} €",
+               alpha=0.9)
+
+    # Gradient de couleur sur les barres non-max via cmap
+    cmap = LinearSegmentedColormap.from_list(
+        "acid", ["#1A1A1A", CYAN_ELEC], N=len(counts)
+    )
+    for i, bar in enumerate(bars):
+        if couleurs[i] != VERT_ACID:
+            bar.set_color(cmap(i / len(counts)))
+
+    ax.set_xlabel("Montant (€)")
+    ax.set_ylabel("Nombre de ventes")
+    ax.legend(facecolor=FOND, labelcolor=ORANGE_FEU, fontsize=8,
+              framealpha=0.6)
+    ax.grid(axis="y", color=GRILLE, linewidth=0.5, alpha=0.6)
+
+    def animate(frame):
+        progress = (frame + 1) / FRAMES
+        for bar, h in zip(bars, counts):
+            bar.set_height(h * progress)
+        return bars
+
+    return animation.FuncAnimation(
+        ax.get_figure(), animate,
+        frames=FRAMES, interval=25, blit=True, repeat=False
+    )
+
+
+# ─────────────────────────────────────────────
+#  📊  GRAPHIQUE 2 — Donut CA par Remise
+# ─────────────────────────────────────────────
+def _graphique_donut(ax, df):
+    _titre(ax, "▌ CA Net  par  Remise")
+
+    repartition = df.groupby("Remise")["CA_Net"].sum()
+    wedges, texts, autotexts = ax.pie(
+        repartition,
+        labels=[f"{int(r)} %" for r in repartition.index],
+        autopct="%1.1f%%",
+        startangle=110,
+        colors=PALETTE_PIE[: len(repartition)],
+        wedgeprops={"edgecolor": FOND, "linewidth": 2, "width": 0.52},
+        pctdistance=0.76
+    )
+    for t in texts:
+        t.set_color(GRIS_MED)
+        t.set_fontsize(8)
+        t.set_fontfamily("monospace")
+    for at in autotexts:
+        at.set_color(FOND)
+        at.set_fontweight("bold")
+        at.set_fontsize(7.5)
+
+    # Texte central
+    part_dom = repartition.idxmax()
+    pct_dom = repartition.max() / repartition.sum() * 100
+    ax.text(0, 0.12, f"{pct_dom:.1f}%",
+            ha="center", va="center", fontsize=19,
+            fontweight="bold", color=VERT_ACID,
+            transform=ax.transAxes)
+    ax.text(0, -0.04, f"remise {int(part_dom)}%",
+            ha="center", va="center", fontsize=8,
+            color=GRIS_MED, transform=ax.transAxes,
+            fontfamily="monospace")
+
+
+# ─────────────────────────────────────────────
+#  📊  GRAPHIQUE 3 — Carte Meilleur Produit
+# ─────────────────────────────────────────────
+def _graphique_carte(ax, id_prod, valeur_max,
+                     prix, qte, remise):
+    _style_ax(ax)
+    _titre(ax, "▌ Produit  le  Plus  Rentable")
+    ax.axis("off")
+
+    # Cadre principal
+    rect = mpatches.FancyBboxPatch(
+        (0.08, 0.52), 0.84, 0.38,
+        boxstyle="round,pad=0.03",
+        linewidth=1.5,
+        edgecolor=VERT_ACID,
+        facecolor="#0F1A00",
+        transform=ax.transAxes, zorder=2
+    )
+    ax.add_patch(rect)
+
+    ax.text(0.50, 0.83, "ID PRODUIT",
+            ha="center", va="center", fontsize=8,
+            color=GRIS_MED, transform=ax.transAxes,
+            fontfamily="monospace")
+    ax.text(0.50, 0.67, f"# {int(id_prod)}",
+            ha="center", va="center", fontsize=30,
+            fontweight="bold", color=VERT_ACID,
+            transform=ax.transAxes, fontfamily="monospace")
+
+    infos = [
+        ("CA Net", f"{valeur_max:,.2f} €"),
+        ("Prix", f"{prix:.2f} €"),
+        ("Quantité", f"{int(qte)} unités"),
+        ("Remise", f"{int(remise)} %"),
     ]
+    for i, (label, valeur) in enumerate(infos):
+        y = 0.46 - i * 0.105
+        ax.text(0.14, y, label,
+                ha="left", va="center", fontsize=8.5,
+                color=GRIS_MED, transform=ax.transAxes,
+                fontfamily="monospace")
+        ax.text(0.88, y, valeur,
+                ha="right", va="center", fontsize=8.5,
+                fontweight="bold", color=BLANC_DOUX,
+                transform=ax.transAxes)
+        ax.plot([0.12, 0.88], [y - 0.040, y - 0.040],
+                color=GRILLE, linewidth=0.6,
+                transform=ax.transAxes)
 
-    with open(chemin, mode="w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["ID", "Prix", "Quantite", "Remise"])  # En-tête
-        writer.writerows(donnees)
-
-    print(f"✅ Fichier '{chemin}' généré avec {len(donnees)} produits.\n")
-
-
-# ══════════════════════════════════════════════
-#  ÉTAPE 2 & 3 & 4 — Lire et calculer
-# ══════════════════════════════════════════════
-def calculer_resultats(chemin: str = FICHIER_ENTREE) -> list[dict]:
-    """
-    Lit ventes.csv et calcule pour chaque ligne :
-      - CA Brut  = Prix × Quantité
-      - CA Net   = CA Brut × (1 − Remise/100)
-      - TVA      = CA Net × 20%
-      - CA TTC   = CA Net + TVA
-
-    Retourne une liste de dictionnaires (une entrée par produit).
-    """
-    if not os.path.exists(chemin):
-        print(f"❌ Erreur : le fichier '{chemin}' est introuvable.")
-        sys.exit(1)
-
-    resultats = []
-
-    with open(chemin, mode="r", encoding="utf-8") as f:
-        lecteur = csv.DictReader(f)   # Lecture avec en-tête comme clés
-
-        for ligne in lecteur:
-            # ── Lecture des valeurs brutes ──────────────────────
-            id_produit = int(ligne["ID"])
-            prix       = float(ligne["Prix"])
-            quantite   = int(ligne["Quantite"])
-            remise     = float(ligne["Remise"])   # en %
-
-            # ── Calculs financiers ──────────────────────────────
-            ca_brut = prix * quantite                          # Étape 2
-            ca_net  = ca_brut * (1 - remise / 100)            # Étape 3
-            tva     = ca_net * TAUX_TVA                       # Étape 4
-            ca_ttc  = ca_net + tva                            # Total TTC
-
-            # ── Stockage du résultat ────────────────────────────
-            resultats.append({
-                "ID"       : id_produit,
-                "Prix"     : prix,
-                "Quantite" : quantite,
-                "Remise"   : remise,
-                "CA_Brut"  : round(ca_brut, 2),
-                "CA_Net"   : round(ca_net,  2),
-                "TVA"      : round(tva,     2),
-                "CA_TTC"   : round(ca_ttc,  2),
-            })
-
-    return resultats
+    # Sparkline tendance
+    ax_sp = ax.inset_axes([0.08, 0.02, 0.84, 0.13])
+    sx = np.linspace(0, 1, 40)
+    sy = np.cumsum(np.random.randn(40) * 0.4) + np.linspace(0, 2, 40)
+    ax_sp.plot(sx, sy, color=CYAN_ELEC, linewidth=1.6, alpha=0.9)
+    ax_sp.fill_between(sx, sy, sy.min(), alpha=0.12, color=CYAN_ELEC)
+    ax_sp.axis("off")
+    ax_sp.set_facecolor(FOND_CARTE)
+    ax.text(0.50, 0.025, "tendance simulée",
+            ha="center", fontsize=7, color=CYAN_ELEC,
+            transform=ax.transAxes, fontfamily="monospace")
 
 
-# ══════════════════════════════════════════════
-#  ÉTAPE 5 — Afficher le CA Total
-# ══════════════════════════════════════════════
-def afficher_rapport(resultats: list[dict]) -> None:
-    """
-    Affiche un tableau récapitulatif dans le terminal,
-    avec le chiffre d'affaires total de l'entreprise.
-    """
-    largeur = 72
-    ligne_sep = "─" * largeur
+# ─────────────────────────────────────────────
+#  📊  GRAPHIQUE 4 — Bullet Chart Top 10
+# ─────────────────────────────────────────────
+def _graphique_top10(ax, df, valeur_max):
+    _style_ax(ax)
+    _titre(ax, "▌ Top 10  Produits  — Bullet  Chart")
 
-    print("\n" + "═" * largeur)
-    print("  📊  RAPPORT DE VENTES — CHIFFRE D'AFFAIRES".center(largeur))
-    print("═" * largeur)
+    top10 = df.nlargest(10, "CA_Net")[["ID", "CA_Net"]].reset_index(drop=True)
+    labels = [f"#{int(p)}" for p in top10["ID"]]
+    valeurs = top10["CA_Net"].values
+    ca_max = df["CA_Net"].max()
+    y_pos = list(range(len(top10) - 1, -1, -1))
+    couleurs = [VERT_ACID, CYAN_ELEC, ORANGE_FEU] + [ROSE_CHOC] * 7
 
-    # En-tête du tableau
-    print(f"  {'ID':>4}  {'Prix':>7}  {'Qté':>4}  {'Remise':>6}  "
-          f"{'CA Brut':>9}  {'CA Net':>9}  {'TVA':>7}  {'CA TTC':>9}")
-    print(ligne_sep)
+    # Barres de fond
+    for i in y_pos:
+        ax.barh(i, ca_max, color="#191919", height=0.60, zorder=1)
 
-    # Lignes de données
-    for r in resultats:
-        print(f"  {r['ID']:>4}  {r['Prix']:>7.2f}  {r['Quantite']:>4}  "
-              f"{r['Remise']:>5.0f}%  {r['CA_Brut']:>9.2f}  "
-              f"{r['CA_Net']:>9.2f}  {r['TVA']:>7.2f}  {r['CA_TTC']:>9.2f}")
+    bullet_bars = []
+    for i, (val, col) in enumerate(zip(valeurs, couleurs)):
+        idx = len(top10) - 1 - i
+        b = ax.barh(idx, 0, color=col, height=0.60,
+                    alpha=0.88, zorder=2)
+        bullet_bars.append((b, val))
+        ax.text(ca_max * 1.02, idx, f"{val:,.0f} €",
+                va="center", color=BLANC_DOUX, fontsize=7.5,
+                fontfamily="monospace")
 
-    print(ligne_sep)
+    ref_line = ax.axvline(0, color=VERT_ACID,
+                          linewidth=1.2, linestyle=":", zorder=3,
+                          alpha=0.75)
 
-    # ── Totaux ──────────────────────────────────────────────
-    total_brut = sum(r["CA_Brut"] for r in resultats)
-    total_net  = sum(r["CA_Net"]  for r in resultats)
-    total_tva  = sum(r["TVA"]     for r in resultats)
-    total_ttc  = sum(r["CA_TTC"]  for r in resultats)
+    def animate(frame):
+        progress = min((frame + 1) / FRAMES, 1.0)
+        for b, target in bullet_bars:
+            b[0].set_width(target * progress)
+        ref_line.set_xdata([valeur_max * progress] * 2)
+        return [b[0] for b, _ in bullet_bars] + [ref_line]
 
-    print(f"  {'TOTAL':<17}{'':>13}  {total_brut:>9.2f}  "
-          f"{total_net:>9.2f}  {total_tva:>7.2f}  {total_ttc:>9.2f}")
-    print("═" * largeur)
+    ani = animation.FuncAnimation(
+        ax.get_figure(), animate,
+        frames=FRAMES, interval=25, blit=True, repeat=False
+    )
 
-    # ── Message de résumé ───────────────────────────────────
-    print(f"\n  💰  CA Total (HT) : {total_net:.2f} €")
-    print(f"  🏦  TVA collectée : {total_tva:.2f} €")
-    print(f"  🧾  CA Total (TTC): {total_ttc:.2f} €\n")
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(labels[::-1], color=BLANC_DOUX,
+                       fontsize=8.5, fontfamily="monospace")
+    ax.set_xlabel("CA Net (€)")
+    ax.tick_params(axis="y", length=0)
+    ax.set_xlim(0, ca_max * 1.22)
+    ax.grid(axis="x", color=GRILLE, linewidth=0.5, alpha=0.6)
 
+    legende = [
+        mpatches.Patch(color=VERT_ACID, label="🥇 1er"),
+        mpatches.Patch(color=CYAN_ELEC, label="🥈 2e"),
+        mpatches.Patch(color=ORANGE_FEU, label="🥉 3e"),
+        mpatches.Patch(color=ROSE_CHOC, label="Top 10"),
+    ]
+    ax.legend(handles=legende, facecolor=FOND, labelcolor=BLANC_DOUX,
+              fontsize=7.5, loc="lower right", framealpha=0.5)
 
-# ══════════════════════════════════════════════
-#  ÉTAPE 6 — Meilleur produit
-# ══════════════════════════════════════════════
-def meilleur_produit(resultats: list[dict]) -> dict:
-    """
-    Identifie le produit ayant généré le CA Net le plus élevé.
-    Utilise la fonction max() avec une clé de tri sur CA_Net.
-    """
-    champion = max(resultats, key=lambda r: r["CA_Net"])
-    print(f"  🏆  Meilleur produit : ID {champion['ID']} "
-          f"→ CA Net = {champion['CA_Net']:.2f} €")
-    print()
-    return champion
-
-
-# ══════════════════════════════════════════════
-#  ÉTAPE 7 — Exporter resultats_final.csv
-# ══════════════════════════════════════════════
-def exporter_resultats(resultats: list[dict],
-                       chemin: str = FICHIER_SORTIE) -> None:
-    """
-    Exporte toutes les colonnes (originales + calculées)
-    dans un nouveau fichier CSV : resultats_final.csv
-    """
-    colonnes = ["ID", "Prix", "Quantite", "Remise",
-                "CA_Brut", "CA_Net", "TVA", "CA_TTC"]
-
-    with open(chemin, mode="w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=colonnes)
-        writer.writeheader()       # Écrit l'en-tête
-        writer.writerows(resultats)
-
-    print(f"✅ Résultats exportés dans '{chemin}'.\n")
+    return ani
 
 
-# ══════════════════════════════════════════════
-#  BONUS — Graphiques Matplotlib
-# ══════════════════════════════════════════════
-def afficher_graphiques(resultats: list[dict]) -> None:
-    """
-    [BONUS] Génère 3 graphiques avec Matplotlib :
-      1. Barres : CA Net par produit
-      2. Camembert : répartition des CA
-      3. Barres empilées : CA Net vs TVA
-    Sauvegarde les graphiques dans 'graphiques_ventes.png'.
-    """
-    if not MATPLOTLIB_AVAILABLE:
-        print("  Graphiques ignorés (matplotlib absent).\n")
+# ─────────────────────────────────────────────
+#  🚀  FONCTION PRINCIPALE
+# ─────────────────────────────────────────────
+def lancer_analyse_performante():
+    print("╔════════════════════════════════════════════════════════╗")
+    print("║          🚀 DÉMARRAGE DU MOTEUR D'ANALYSE              ║")
+    print("╚════════════════════════════════════════════════════════╝")
+
+    # ── Saisie utilisateur ──
+    try:
+        saisie = input("\nNombre de ventes à générer (ex: 100, 1000000) : ").replace(" ", "")
+        n = int(saisie)
+    except ValueError:
+        print("❌ Erreur : veuillez entrer un entier valide.")
         return
 
-    ids    = [str(r["ID"])    for r in resultats]
-    ca_net = [r["CA_Net"]     for r in resultats]
-    tva    = [r["TVA"]        for r in resultats]
+    start = time.time()
 
-    # Palette de couleurs personnalisée
-    couleurs = ["#2ecc71", "#3498db", "#e74c3c", "#f39c12", "#9b59b6",
-                "#1abc9c", "#e67e22", "#34495e", "#e91e63", "#00bcd4"]
+    try:
+        # ── Génération des données ──
+        print(f"\n⏳ Génération de {n:,} lignes…")
+        df = pd.DataFrame({
+            "ID": np.arange(1001, 1001 + n),
+            "Prix": np.round(np.random.uniform(5.0, 500.0, n), 2),
+            "Quantite": np.random.randint(1, 51, n),
+            "Remise": np.random.choice([0, 5, 10, 15, 20, 25, 30], n),
+        })
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    fig.suptitle(" Tableau de Bord des Ventes — E-Commerce",
-                 fontsize=16, fontweight="bold", color="#2c3e50")
-    fig.patch.set_facecolor("#f8f9fa")
+        # ── Export / Import CSV ──
+        df.to_csv(FICHIER_ENTREE, index=False)
+        print(f"📁 '{FICHIER_ENTREE}' généré.")
+        df = pd.read_csv(FICHIER_ENTREE)
 
-    # ── Graphique 1 : CA Net par produit ────────────────────
-    ax1 = axes[0]
-    barres = ax1.bar(ids, ca_net, color=couleurs, edgecolor="white",
-                     linewidth=1.5, zorder=3)
-    ax1.set_title("CA Net par Produit (€)", fontweight="bold")
-    ax1.set_xlabel("ID Produit")
-    ax1.set_ylabel("Euros (€)")
-    ax1.grid(axis="y", linestyle="--", alpha=0.5, zorder=0)
-    ax1.set_facecolor("#ecf0f1")
-    # Étiquettes au-dessus des barres
-    for b, val in zip(barres, ca_net):
-        ax1.text(b.get_x() + b.get_width() / 2, b.get_height() + 1,
-                 f"{val:.0f}€", ha="center", va="bottom", fontsize=8)
+        # ── Calculs financiers ──
+        df["CA_Brut"] = df["Prix"] * df["Quantite"]
+        df["CA_Net"] = df["CA_Brut"] * (1 - df["Remise"] / 100)
+        df["TVA"] = df["CA_Net"] * TAUX_TVA
+        df["CA_TTC"] = df["CA_Net"] + df["TVA"]
 
-    # ── Graphique 2 : Répartition en camembert ───────────────
-    ax2 = axes[1]
-    wedges, texts, autotexts = ax2.pie(
-        ca_net, labels=ids, colors=couleurs,
-        autopct="%1.1f%%", startangle=140,
-        wedgeprops={"edgecolor": "white", "linewidth": 2}
-    )
-    for t in autotexts:
-        t.set_fontsize(8)
-    ax2.set_title("Répartition du CA Net (%)", fontweight="bold")
+        # ── Rapport console ──
+        print("\n" + "═" * 65)
+        print(f"📊 RAPPORT — {n:,} TRANSACTIONS")
+        print("-" * 65)
 
-    # ── Graphique 3 : CA Net vs TVA (barres empilées) ────────
-    ax3 = axes[2]
-    x = range(len(ids))
-    ax3.bar(x, ca_net, label="CA Net (HT)", color="#3498db",
-            edgecolor="white", linewidth=1.2)
-    ax3.bar(x, tva, bottom=ca_net, label="TVA (20%)", color="#e74c3c",
-            edgecolor="white", linewidth=1.2, alpha=0.85)
-    ax3.set_xticks(x)
-    ax3.set_xticklabels(ids)
-    ax3.set_title("CA Net + TVA par Produit", fontweight="bold")
-    ax3.set_xlabel("ID Produit")
-    ax3.set_ylabel("Euros (€)")
-    ax3.legend()
-    ax3.set_facecolor("#ecf0f1")
-    ax3.grid(axis="y", linestyle="--", alpha=0.5)
+        cols = ["ID", "Prix", "Quantite", "Remise", "CA_Net", "CA_TTC"]
+        if n <= 20:
+            print(df[cols].to_string(index=False))
+        else:
+            print("Aperçu (5 premières lignes) :")
+            print(df[cols].head(5).to_string(index=False))
+            print(f"\n… [ {n:,} lignes traitées ] …")
 
-    plt.tight_layout()
-    nom_fichier = "graphiques_ventes.png"
-    plt.savefig(nom_fichier, dpi=150, bbox_inches="tight")
-    print(f"✅ Graphiques sauvegardés dans '{nom_fichier}'.\n")
-    plt.show(block=False)   
-    plt.pause(50)             
+        print("-" * 65)
 
+        ca_total = df["CA_TTC"].sum()
+        idx_max = df["CA_Net"].idxmax()
+        id_meilleur = df.loc[idx_max, "ID"]
+        valeur_max = df["CA_Net"].max()
+        prix_meilleur = df.loc[idx_max, "Prix"]
+        qte_meilleur = df.loc[idx_max, "Quantite"]
+        remise_meilleur = df.loc[idx_max, "Remise"]
 
-# ══════════════════════════════════════════════
-#  BONUS — Exporter Excel formaté
-# ══════════════════════════════════════════════
-def exporter_excel(resultats: list[dict],
-                   chemin: str = "resultats_final.xlsx") -> None:
-    """
-    [BONUS] Crée un fichier Excel formaté avec :
-      - En-têtes en bleu foncé avec texte blanc
-      - Lignes alternées (bleu clair / blanc)
-      - Bordures fines sur toutes les cellules
-      - Largeur des colonnes ajustée automatiquement
-    """
-    # ── Créer le classeur ───────────────────────────────────
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Résultats Ventes"
+        print(f"💰 CA TOTAL (TTC)              : {ca_total:,.2f} €")
+        print(f"🏆 MEILLEURE VENTE (NET)       : {valeur_max:,.2f} €")
+        print(f"🥇 ID — PLUS GROS BÉNÉFICE    : {id_meilleur}")
+        print("═" * 65)
 
-    # ── Définir les styles ──────────────────────────────────
-    header_fill = PatternFill("solid", fgColor="1F4E79")   # Bleu foncé
-    alt_fill    = PatternFill("solid", fgColor="D6E4F0")   # Bleu clair
-    border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"),  bottom=Side(style="thin")
-    )
+        # ── Export résultats ──
+        if n <= 2_000_000:
+            df.to_csv(FICHIER_SORTIE, index=False)
+            print(f"💾 Résultats exportés dans '{FICHIER_SORTIE}'")
+        else:
+            print("⚠️  Volume > 2M : export CSV désactivé.")
 
-    # ── Écrire les en-têtes (ligne 1) ───────────────────────
-    colonnes = ["ID", "Prix", "Quantite", "Remise",
-                "CA_Brut", "CA_Net", "TVA", "CA_TTC"]
-    for col, titre in enumerate(colonnes, 1):
-        cell = ws.cell(row=1, column=col, value=titre)
-        cell.font      = Font(bold=True, color="FFFFFF", size=12)
-        cell.fill      = header_fill
-        cell.alignment = Alignment(horizontal="center")
-        cell.border    = border
+        # ─────────────────────────────────────────────────────────────
+        # VISUALISATION — 4 panneaux  (nécessite n > 1)
+        # ─────────────────────────────────────────────────────────────
+        if n > 1:
+            print("\n📊 Rendu des graphiques…")
 
-    # ── Écrire les données (à partir de la ligne 2) ─────────
-    for row_idx, r in enumerate(resultats, 2):
-        # Lignes paires = bleu clair, lignes impaires = blanc
-        fill = alt_fill if row_idx % 2 == 0 else PatternFill("solid", fgColor="FFFFFF")
-        for col_idx, key in enumerate(colonnes, 1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=r[key])
-            cell.alignment = Alignment(horizontal="center")
-            cell.border    = border
-            cell.fill      = fill
+            fig = plt.figure(figsize=(22, 10), facecolor=FOND)
+            fig.suptitle(
+                f"TABLEAU DE BORD  //  {n:,} TRANSACTIONS",
+                fontsize=14, fontweight="bold",
+                color=VERT_ACID, y=0.98,
+                fontfamily="monospace"
+            )
 
-    # ── Ajuster la largeur des colonnes automatiquement ─────
-    for col in ws.columns:
-        max_len = max(len(str(c.value or "")) for c in col) + 4
-        ws.column_dimensions[get_column_letter(col[0].column)].width = max_len
+            gs = GridSpec(2, 2, figure=fig,
+                          hspace=0.42, wspace=0.32,
+                          left=0.06, right=0.97,
+                          top=0.93, bottom=0.08)
 
-    # ── Sauvegarder et ouvrir le fichier ────────────────────
-    wb.save(chemin)
-    print(f"✅ Excel formaté sauvegardé dans '{chemin}'.\n")
-    os.startfile(chemin)
+            ax1 = fig.add_subplot(gs[0, 0])
+            ax2 = fig.add_subplot(gs[0, 1])
+            ax3 = fig.add_subplot(gs[1, 0])
+            ax4 = fig.add_subplot(gs[1, 1])
+
+            # Ligne décorative sous le titre
+            fig.add_artist(
+                plt.Line2D([0.06, 0.97], [0.955, 0.955],
+                           transform=fig.transFigure,
+                           color=VERT_ACID, linewidth=0.8, alpha=0.5)
+            )
+
+            ani1 = _graphique_histogramme(ax1, df, valeur_max)
+            _graphique_donut(ax2, df)
+            _graphique_carte(ax3, id_meilleur, valeur_max,
+                             prix_meilleur, qte_meilleur, remise_meilleur)
+            ani4 = _graphique_top10(ax4, df, valeur_max)
+
+            print(f"✅ Terminé en {time.time() - start:.4f} s")
+            plt.show()
+
+        else:
+            print(f"✅ Terminé en {time.time() - start:.4f} s")
+
+    except MemoryError:
+        print("\n❌ Mémoire insuffisante pour ce volume de données.")
 
 
-# ══════════════════════════════════════════════
-#  🚀  PROGRAMME PRINCIPAL
-# ══════════════════════════════════════════════
-def main():
-    """
-    Point d'entrée du script.
-    Exécute toutes les étapes dans l'ordre logique.
-    """
-    print("\n" + "🛒 " * 20)
-    print("   DÉMARRAGE — Analyse automatique des ventes")
-    print("🛒 " * 20 + "\n")
-
-    # ── Étape 1 : Générer les données ───────────────────────
-    generer_ventes_csv()
-
-    # ── Étapes 2-4 : Lire et calculer ──────────────────────
-    resultats = calculer_resultats()
-
-    # ── Étape 5 : Afficher le rapport ──────────────────────
-    afficher_rapport(resultats)
-
-    # ── Étape 6 : Meilleur produit ──────────────────────────
-    meilleur_produit(resultats)
-
-    # ── Étape 7 : Exporter le CSV final ────────────────────
-    exporter_resultats(resultats)
-
-    # ── Bonus : Graphiques ──────────────────────────────────
-    afficher_graphiques(resultats)
-
-    # ── Bonus : Export Excel ────────────────────────────────
-    exporter_excel(resultats)
-
-    print("✨ Analyse terminée avec succès !\n")
-
-
-# Ce bloc s'assure que main() ne s'exécute que si on lance
-# ce fichier directement (pas si on l'importe dans un autre script)
 if __name__ == "__main__":
-    main()
+    lancer_analyse_performante()
