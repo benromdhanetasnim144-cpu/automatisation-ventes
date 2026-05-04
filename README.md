@@ -139,6 +139,15 @@ automatisation-ventes/
 
 ---
 
+## 📊 Résultats de l'Analyse (4 Produits)
+
+### Tableau de Bord Interactif
+![Tableau de Bord](./dashboard_result.png)
+
+### Aperçu du fichier Excel généré
+![Résultats Excel](./excel_result.png)
+
+---
 <div align="center">
 <img src="https://img.shields.io/badge/Made%20with-❤️%20&%20Python-red?style=for-the-badge"/>
 </div>
