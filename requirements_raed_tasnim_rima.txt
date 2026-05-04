@@ -1,4 +1,7 @@
 # 📦 Dépendances du projet — Automatisation des Ventes
 # Installer avec : pip install -r requirements.txt
 
-matplotlib>=3.7.0   # Pour les graphiques (Bonus)
+pandas>=2.0.0       # manipulation et analyse des données CSV
+numpy>=1.24.0        # calculs numériques et génération de données[cite: 3]
+matplotlib>=3.7.0    # génération des graphiques animés et tableaux de bord[cite: 4, 5]
+openpyxl>=3.1.0      # création et formatage des fichiers Excel (.xlsx)[cite: 3]
