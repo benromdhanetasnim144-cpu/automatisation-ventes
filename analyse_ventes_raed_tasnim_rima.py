@@ -332,7 +332,7 @@ def exporter_excel(resultats: list[dict],
     # ── Sauvegarder et ouvrir le fichier ────────────────────
     wb.save(chemin)
     print(f"✅ Excel formaté sauvegardé dans '{chemin}'.\n")
-    os.startfile(chemin)
+    
 
 
 # ─────────────────────────────────────────────
@@ -454,8 +454,12 @@ def lancer_analyse_performante():
             print(f"✅ Terminé en {time.time() - start:.4f} s")
             print("💡 INFO : Fermez la fenêtre du graphique pour ouvrir le fichier Excel.")
             plt.show()
+            if n <= 1000000:
+                 print("💡 Ouverture automatique du tableau Excel...")
+                 os.startfile("resultats_final.xlsx")            
         else:
             print(f"✅ Terminé en {time.time() - start:.4f} s")
+        print("✨ Analyse terminée avec succès !\n")
         
         
     except MemoryError:
