@@ -21,6 +21,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side    
 from openpyxl.utils import get_column_letter       
 import os 
+import xlsxwriter
 
 # ─────────────────────────────────────────────
 #  ⚙️  CONSTANTES GLOBALES
@@ -291,47 +292,50 @@ def exporter_excel(resultats: list[dict],
       - Bordures fines sur toutes les cellules
       - Largeur des colonnes ajustée automatiquement
     """
-    # ── Créer le classeur ───────────────────────────────────
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Résultats Ventes"
+    df = pd.DataFrame(resultats)
 
-    # ── Définir les styles ──────────────────────────────────
-    header_fill = PatternFill("solid", fgColor="1F4E79")   # Bleu foncé
-    alt_fill    = PatternFill("solid", fgColor="D6E4F0")   # Bleu clair
-    border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"),  bottom=Side(style="thin")
-    )
+    # ── Créer le fichier avec xlsxwriter ────────────────────
+    with pd.ExcelWriter(chemin, engine="xlsxwriter") as writer:
+        df.to_excel(writer, sheet_name="Résultats Ventes", index=False)
 
-    # ── Écrire les en-têtes (ligne 1) ───────────────────────
-    colonnes = ["ID", "Prix", "Quantite", "Remise",
-                "CA_Brut", "CA_Net", "TVA", "CA_TTC"]
-    for col, titre in enumerate(colonnes, 1):
-        cell = ws.cell(row=1, column=col, value=titre)
-        cell.font      = Font(bold=True, color="FFFFFF", size=12)
-        cell.fill      = header_fill
-        cell.alignment = Alignment(horizontal="center")
-        cell.border    = border
+        workbook  = writer.book
+        worksheet = writer.sheets["Résultats Ventes"]
 
-    # ── Écrire les données (à partir de la ligne 2) ─────────
-    for row_idx, r in enumerate(resultats, 2):
-        # Lignes paires = bleu clair, lignes impaires = blanc
-        fill = alt_fill if row_idx % 2 == 0 else PatternFill("solid", fgColor="FFFFFF")
-        for col_idx, key in enumerate(colonnes, 1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=r[key])
-            cell.alignment = Alignment(horizontal="center")
-            cell.border    = border
-            cell.fill      = fill
+        # ── Format en-têtes ──────────────────────────────────
+        header_fmt = workbook.add_format({
+            "bold": True, "bg_color": "#1F4E79",
+            "font_color": "#FFFFFF", "align": "center", "border": 1
+        })
 
-    # ── Ajuster la largeur des colonnes automatiquement ─────
-    for col in ws.columns:
-        max_len = max(len(str(c.value or "")) for c in col) + 4
-        ws.column_dimensions[get_column_letter(col[0].column)].width = max_len
+        # ── Format lignes paires (bleu clair) ────────────────
+        pair_fmt = workbook.add_format({
+            "bg_color": "#D6E4F0", "align": "center", "border": 1
+        })
 
-    # ── Sauvegarder et ouvrir le fichier ────────────────────
-    wb.save(chemin)
-    print(f"✅ Excel formaté sauvegardé dans '{chemin}'.\n")
+        # ── Format lignes impaires (blanc) ───────────────────
+        impair_fmt = workbook.add_format({
+            "bg_color": "#FFFFFF", "align": "center", "border": 1
+        })
+
+        # ── Écrire les en-têtes ──────────────────────────────
+        for col_idx, col_name in enumerate(df.columns):
+            worksheet.write(0, col_idx, col_name, header_fmt)
+
+        # ── Écrire les données ───────────────────────────────
+        for row_idx, row in enumerate(df.itertuples(index=False), 1):
+            fmt = pair_fmt if row_idx % 2 == 0 else impair_fmt
+            for col_idx, val in enumerate(row):
+                worksheet.write(row_idx, col_idx, val, fmt)
+
+        # ── Largeur automatique des colonnes ─────────────────
+        for col_idx, col_name in enumerate(df.columns):
+            max_len = max(
+                df[col_name].astype(str).map(len).max(),
+                len(col_name)
+            ) + 2
+            worksheet.set_column(col_idx, col_idx, max_len)
+
+    print(f"✅  Excel formaté sauvegardé dans '{chemin}'.\n")
     
 
 
