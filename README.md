@@ -45,12 +45,15 @@
   <br/><br/>
 
   | Bibliothèque | Version | Rôle |
-  |---|---|---|
-  | **Python** | 3.14 | Langage principal du projet |
-  | **Matplotlib** | ≥ 3.x | Génération des 3 graphiques (barres, camembert, courbes) |
-  | **Pandas** | ≥ 2.x | Manipulation et analyse des données CSV |
-  | **CSV** | intégré | Lecture et écriture des fichiers `.csv` |
-  | **OS** | intégré | Gestion des chemins et fichiers du système |
+|---|---|---|
+| **Python** | 3.14 | Langage principal du projet |
+| **Matplotlib** | ≥ 3.x | Génération des 4 graphiques animés |
+| **Pandas** | ≥ 2.x | Manipulation et analyse des données CSV |
+| **Numpy** | ≥ 1.24 | Calculs numériques et génération de données |
+| **openpyxl** | ≥ 3.1 | Création et formatage des fichiers Excel |
+| **xlsxwriter** | ≥ 3.0 | Export Excel rapide pour grands volumes |
+| **CSV** | intégré | Lecture et écriture des fichiers `.csv` |
+| **OS** | intégré | Gestion des chemins et fichiers du système |
 
   <br/>
   <p>Installez toutes les dépendances en une seule commande :</p>
